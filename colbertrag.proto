@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package colbertrag;
+
+service ColbertRAG {
+  rpc Retrieve(Request) returns (Response);
+}
+
+message Request {
+  string query = 1;
+  int32 k = 2;
+}
+
+message Document {
+  string page_content = 1;
+  map<string, string> metadata = 2;
+}
+
+message Response {
+  repeated Document documents = 1;
+}
+
