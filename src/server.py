@@ -12,10 +12,15 @@ class ColbertRAGServicer(ColbertRAGServicer):
         self.RAG = model
 
     def Retrieve(self, request, context):
+        """Get documents relevant to a query."""
         k = request.k if request.k > 0 else 1
-        retriever = self.RAG.as_langchain_retriever(k=k)
-        documents = [Document(page_content=doc.page_content, metadata=doc.metadata)
-                     for doc in retriever.invoke(request.query)]
+        documents = [
+            Document(
+                page_content=doc["content"], metadata=doc.get("document_metadata", {})
+            )
+            for doc in self.RAG.search(query=request.query, k=k)
+        ]
+        
         return Response(documents=documents)
 
 def serve(model, port, max_workers):
