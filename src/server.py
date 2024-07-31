@@ -1,32 +1,32 @@
 import grpc
 from concurrent import futures
-import colbertrag_pb2
-import colbertrag_pb2_grpc
+from colbertrag_pb2 import Response, Document
+from colbertrag_pb2_grpc import add_ColbertRAGServicer_to_server, ColbertRAGServicer
 from ragatouille import RAGPretrainedModel
+from wikipedia import get_wikipedia_page
 
 RAG = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
+pages = ["2024_United_States_presidential_election", "2024_United_States_elections"]
+collection = [get_wikipedia_page(page) for page in pages]
+RAG.index(
+    collection=collection,
+    index_name="US_Elections-2024",
+    max_document_length=180,
+    split_documents=True,
+)
 
-class ColbertRAGServicer(colbertrag_pb2_grpc.ColbertRAGServicer):
+class ColbertRAGServicer(ColbertRAGServicer):
     def Retrieve(self, request, context):
         k = request.k if request.k > 0 else 1
         retriever = RAG.as_langchain_retriever(k=k)
-        documents = retriever.invoke(request.query)
-        # Implement your query processing logic here
-        # For example, let's create two dummy documents
-        # doc1 = colbertrag_pb2.Document(
-        #     page_content="Hello, world!",
-        #     metadata={"source": "https://example.com"}
-        # )
-        # doc2 = colbertrag_pb2.Document(
-        #     page_content="This is a sample document.",
-        #     metadata={"source": "https://sample.com"}
-        # )
+        documents = [Document(page_content=doc.page_content, metadata=doc.metadata) 
+                     for doc in retriever.invoke(request.query)]
 
-        return colbertrag_pb2.Response(documents=documents)
+        return Response(documents=documents)
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    colbertrag_pb2_grpc.add_ColbertRAGServicer_to_server(ColbertRAGServicer(), server)
+    add_ColbertRAGServicer_to_server(ColbertRAGServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
     server.wait_for_termination()
