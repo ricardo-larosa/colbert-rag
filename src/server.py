@@ -15,16 +15,19 @@ def parse_arguments():
     parser.add_argument("--index", type=str, help="Path to the ColbertRAG index")
     parser.add_argument("--port", type=int, help="Port to run the server on (default: 50051)")
     parser.add_argument("--max_workers", type=int, default=10, help="Maximum number of workers (default: 10)")
-
-    if args.port is None:
-        args.port = 50051 if args.server == 'grpc' else 8000
-    if args.host is None:
-        args.host = '[::]' if args.server == 'grpc' else '0.0.0.0'
+    parser.add_argument("--log-level", type=str, default="INFO", help="Log level (default: INFO)")
 
     return parser.parse_args()
 
 if __name__ == '__main__':
     args = parse_arguments()
+    if args.log_level is not None:
+        logging.basicConfig(level=args.log_level)
+    if args.port is None:
+        args.port = 50051 if args.server == 'grpc' else 8000
+    if args.host is None:
+        args.host = '[::]' if args.server == 'grpc' else '0.0.0.0'
+
     RAG = RAGPretrainedModel.from_index(f'{RAGATOUILLE_PATH}/{args.index}')
     logging.info(f"Loaded index from {RAGATOUILLE_PATH}/{args.index}")
     if args.server == 'grpc':
