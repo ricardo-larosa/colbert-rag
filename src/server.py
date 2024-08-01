@@ -1,6 +1,4 @@
-import grpc_server
 import argparse
-from fastapi import FastAPI
 from ragatouille import RAGPretrainedModel
 import grpc_server
 import fastapi_server
@@ -15,7 +13,7 @@ def parse_arguments():
     parser.add_argument("--index", type=str, help="Path to the ColbertRAG index")
     parser.add_argument("--port", type=int, help="Port to run the server on (default: 50051)")
     parser.add_argument("--max_workers", type=int, default=10, help="Maximum number of workers (default: 10)")
-    parser.add_argument("--log-level", type=str, default="INFO", help="Log level (default: INFO)")
+    parser.add_argument("--log_level", type=str, default="INFO", help="Log level (default: INFO)")
 
     return parser.parse_args()
 
@@ -31,6 +29,6 @@ if __name__ == '__main__':
     RAG = RAGPretrainedModel.from_index(f'{RAGATOUILLE_PATH}/{args.index}')
     logging.info(f"Loaded index from {RAGATOUILLE_PATH}/{args.index}")
     if args.server == 'grpc':
-        grpc_server.serve(RAG, args.port, args.max_workers)
+        grpc_server.serve(RAG, args.host, args.port, args.max_workers)
     elif args.server == 'fastapi':
         fastapi_server.serve(RAG, args.host, args.port)
