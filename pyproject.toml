@@ -11,6 +11,7 @@ RAGatouille = "^0.0.8.post2"
 langchain-openai = "0.1.7"
 python-dotenv = "^1.0.1"
 grpcio-tools = "^1.65.1"
+gitpython = "^3.1.43"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
