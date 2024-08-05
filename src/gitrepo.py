@@ -50,7 +50,7 @@ def get_repo(repo_name: str, blacklist: Set[str] = set(), repo_metadata=False) -
                     with open(file_path, 'rb') as f:
                         content = f.read()
                     
-                    file_contents.append((relative_path, content.decode('utf-8', errors='replace')))
+                    file_contents.append(content.decode('utf-8', errors='replace'))
                     
                     file_stat = os.stat(file_path)
                     file_meta = {
