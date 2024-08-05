@@ -14,16 +14,17 @@ class FileProcessingError(Exception):
     """Exception raised for errors in processing individual files."""
     pass
 
-def get_repo(repo_name: str, blacklist: Set[str] = set(), repo_metadata=False) -> Tuple[List[Tuple[str, str]], List[Dict[str, any]]]:
+def get_repo(repo_name: str, ext_blacklist: Set[str] = set(), dir_blacklist: Set[str] = set(), repo_metadata=False) -> Tuple[List[Tuple[str, str]], List, List[Dict[str, any]]]:
     """
     Clone a GitHub repository and read its contents, excluding files with blacklisted extensions.
 
     Args:
     repo_name (str): The name of the GitHub repository in the format "username/repo-name".
-    blacklist (Set[str]): A set of file extensions to exclude (e.g., {'.exe', '.dll'}).
+    ext_blacklist (Set[str]): A set of file extensions to exclude (e.g., {'.exe', '.dll'}).
+    dir_blacklist (Set[str]): A set of directory names to exclude (e.g., {'node_modules', 'build'}).
 
     Returns:
-    Tuple[List[Tuple[str, str]], List[Dict[str, any]]]: A tuple containing file contents and metadata.
+    Tuple[List[Tuple[str, str]], List, List[Dict[str, any]]]: A tuple containing file_contents, document_ids and metadata.
     """
     with tempfile.TemporaryDirectory() as temp_dir:
         # Clone the repository, fetching only the default branch
@@ -35,15 +36,18 @@ def get_repo(repo_name: str, blacklist: Set[str] = set(), repo_metadata=False) -
 
         file_contents = []
         metadata = []
-
-        for root, _, files in os.walk(temp_dir):
+        ids = []
+        for root, _, files in os.walk(temp_dir, topdown=True):
             for file in files:
                 file_path = os.path.join(root, file)
                 relative_path = os.path.relpath(file_path, temp_dir)
                 _, file_extension = os.path.splitext(file)
 
                 # Skip files with blacklisted extensions
-                if file_extension.lower() in blacklist:
+                if file_extension.lower() in ext_blacklist:
+                    continue
+                # Skip files in blacklisted directories (additional check)
+                if any(blacklisted_dir in relative_path.split(os.sep) for blacklisted_dir in dir_blacklist):
                     continue
 
                 try:
@@ -51,7 +55,7 @@ def get_repo(repo_name: str, blacklist: Set[str] = set(), repo_metadata=False) -
                         content = f.read()
                     
                     file_contents.append(content.decode('utf-8', errors='replace'))
-                    
+                    ids.append(file_path)
                     file_stat = os.stat(file_path)
                     file_meta = {
                         "filename": file,
@@ -81,7 +85,7 @@ def get_repo(repo_name: str, blacklist: Set[str] = set(), repo_metadata=False) -
             }
             metadata.append(repo_meta)
 
-        return file_contents, metadata
+        return file_contents, ids, metadata
 
 def get_mime_type(file_path: str) -> str:
     mime_type, _ = mimetypes.guess_type(file_path)

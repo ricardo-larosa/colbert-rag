@@ -15,12 +15,12 @@ def parse_arguments():
 
     return parser.parse_args()
 
-def make_index(model_name:str, index_name:str, repo_name:str, blacklist = {}, max_document_length=180, split_documents=True) -> str:
+def make_index(model_name:str, index_name:str, repo_name:str, ext_blacklist = {}, dir_blacklist = {}, max_document_length=180, split_documents=True) -> str:
     logging.info(f"loading pretrained model {model_name}...")
     RAG = RAGPretrainedModel.from_pretrained(model_name)
     logging.info(f"pretrained model {model_name} loaded.")
     try:
-        collection, metadata = get_repo(repo_name, blacklist)
+        collection, document_ids, metadata = get_repo(repo_name, ext_blacklist, dir_blacklist)
         logging.info(f"git repo {repo_name} cloned.")
     except RepoCloneError as e:
         logging.error(f"Repository cloning failed: {e}")
@@ -36,7 +36,8 @@ def make_index(model_name:str, index_name:str, repo_name:str, blacklist = {}, ma
             max_document_length=max_document_length,
             split_documents=split_documents,
             document_metadatas=metadata,
-            use_faiss=True,
+            document_ids=document_ids,
+            # use_faiss=True,
             overwrite_index=True
         )
 
@@ -45,13 +46,15 @@ if __name__ == '__main__':
     args = parse_arguments()
     if args.log_level is not None:
         logging.basicConfig(level=args.log_level)
-    blacklist = {'.exe', '.dll', '.so', '.dylib', '.png', '.jpg', '.jpeg', '.gif', '.rst', '.txt', '.yml'}
+    ext_blacklist = {'.exe', '.dll', '.so', '.dylib', '.png', '.jpg', '.jpeg', '.gif', '.rst', '.txt', '.yaml','.gitignore'}
+    dir_blacklist = {'ext','tests', 'docs', '.git', '.github'}
     if args.action == 'create':
         path = make_index(
             model_name="colbert-ir/colbertv2.0",
             index_name=args.name,
             repo_name=args.repo_name,
-            blacklist=blacklist,
+            ext_blacklist=ext_blacklist,
+            dir_blacklist=dir_blacklist,
             max_document_length=args.chunk_size
         )
         logging.info(f"created index in {path}")   
