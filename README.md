@@ -49,3 +49,9 @@ def run():
 if __name__ == '__main__':
     run()
 ```
+
+## Indexing a Git repo
+
+```sh
+python indexer.py --name pvlib --repo_name pvlib/pvlib-python --chunk_size=512
+```

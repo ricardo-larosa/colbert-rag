@@ -46,9 +46,11 @@ if __name__ == '__main__':
     blacklist = {'.exe', '.dll', '.so', '.dylib', '.png', '.jpg', '.jpeg', '.gif', '.rst', '.txt'}
     if args.action == 'create':
         path = make_index(
+            model_name="colbert-ir/colbertv2.0",
             index_name=args.name,
             repo_name=args.repo_name,
-            blacklist=blacklist
+            blacklist=blacklist,
+            max_document_length=args.chunk_size
         )
         logging.info(f"created index in {path}")   
     elif args.action == 'update':
