@@ -15,7 +15,7 @@ def parse_arguments():
 
     return parser.parse_args()
 
-def make_index(model_name:str, index_name:str, repo_name:str, ext_blacklist = {}, dir_blacklist = {}, max_document_length=180, split_documents=True) -> str:
+def make_index(model_name:str, index_name:str, repo_name:str, ext_blacklist = {}, dir_blacklist = {}, max_document_length=180, split_documents=True, use_faiss=True) -> str:
     logging.info(f"loading pretrained model {model_name}...")
     RAG = RAGPretrainedModel.from_pretrained(model_name)
     logging.info(f"pretrained model {model_name} loaded.")
@@ -37,7 +37,7 @@ def make_index(model_name:str, index_name:str, repo_name:str, ext_blacklist = {}
             split_documents=split_documents,
             document_metadatas=metadata,
             document_ids=document_ids,
-            # use_faiss=True,
+            use_faiss=use_faiss,
             overwrite_index=True
         )
 
@@ -47,7 +47,8 @@ if __name__ == '__main__':
     if args.log_level is not None:
         logging.basicConfig(level=args.log_level)
     ext_blacklist = {'.exe', '.dll', '.so', '.dylib', '.png', '.jpg', '.jpeg', '.gif', '.rst', '.txt', '.yaml','.gitignore'}
-    dir_blacklist = {'ext','tests', 'docs', '.git', '.github'}
+    # dir_blacklist = {'ext','tests', 'docs', '.git', '.github'}
+    dir_blacklist = {'script','tests', 'doc', '.git', '.github'}
     if args.action == 'create':
         path = make_index(
             model_name="colbert-ir/colbertv2.0",

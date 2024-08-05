@@ -37,7 +37,11 @@ def get_repo(repo_name: str, ext_blacklist: Set[str] = set(), dir_blacklist: Set
         file_contents = []
         metadata = []
         ids = []
-        for root, _, files in os.walk(temp_dir, topdown=True):
+        for root, dirs, files in os.walk(temp_dir, topdown=True):
+            # Exclude blacklisted directories only at the root level
+            if root == temp_dir:
+                dirs[:] = [d for d in dirs if d not in dir_blacklist]
+                
             for file in files:
                 file_path = os.path.join(root, file)
                 relative_path = os.path.relpath(file_path, temp_dir)
@@ -45,9 +49,6 @@ def get_repo(repo_name: str, ext_blacklist: Set[str] = set(), dir_blacklist: Set
 
                 # Skip files with blacklisted extensions
                 if file_extension.lower() in ext_blacklist:
-                    continue
-                # Skip files in blacklisted directories (additional check)
-                if any(blacklisted_dir in relative_path.split(os.sep) for blacklisted_dir in dir_blacklist):
                     continue
 
                 try:

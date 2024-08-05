@@ -21,7 +21,8 @@ repos = [
     "pytest-dev/pytest",
     "scikit-learn/scikit-learn",
     "sphinx-doc/sphinx",
-    "sympy/sympy"
+    "sympy/sympy",
+    "pvlib/pvlib-python"
 ]
 
 # Get the sizes of the repositories
