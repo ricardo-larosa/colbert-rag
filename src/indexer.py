@@ -36,6 +36,8 @@ def make_index(model_name:str, index_name:str, repo_name:str, blacklist = {}, ma
             max_document_length=max_document_length,
             split_documents=split_documents,
             document_metadatas=metadata,
+            use_faiss=True,
+            overwrite_index=True
         )
 
 
@@ -43,7 +45,7 @@ if __name__ == '__main__':
     args = parse_arguments()
     if args.log_level is not None:
         logging.basicConfig(level=args.log_level)
-    blacklist = {'.exe', '.dll', '.so', '.dylib', '.png', '.jpg', '.jpeg', '.gif', '.rst', '.txt'}
+    blacklist = {'.exe', '.dll', '.so', '.dylib', '.png', '.jpg', '.jpeg', '.gif', '.rst', '.txt', '.yml'}
     if args.action == 'create':
         path = make_index(
             model_name="colbert-ir/colbertv2.0",
