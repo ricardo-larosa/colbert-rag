@@ -11,7 +11,7 @@ def parse_arguments():
     parser.add_argument("--server", choices=['grpc', 'fastapi'], default='grpc', help="Server type (default: grpc)")
     parser.add_argument("--host", type=str, help="Host to bind the server to")
     parser.add_argument("--index", type=str, help="Path to the ColbertRAG index")
-    parser.add_argument("--port", type=int, help="Port to run the server on (default: 50051)")
+    parser.add_argument("--port", type=int, help="Port to run the server on (default: 50051 or 8000)")
     parser.add_argument("--max_workers", type=int, default=10, help="Maximum number of workers (default: 10)")
     parser.add_argument("--log_level", type=str, default="INFO", help="Log level (default: INFO)")
 

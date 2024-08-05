@@ -21,7 +21,7 @@ def get_wikipedia_page(title: str):
     }
 
     # Custom User-Agent header to comply with Wikipedia's best practices
-    headers = {"User-Agent": "RAGatouille_tutorial/0.0.1 (ricardo@larosa.dev)"}
+    headers = {"User-Agent": "Colbert-RAG/0.0.1 (ricardo@larosa.dev)"}
 
     response = requests.get(URL, params=params, headers=headers)
     data = response.json()
