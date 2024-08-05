@@ -22,46 +22,32 @@ def make_index(index_name:str, repo_name:str, blacklist = {}, max_document_lengt
     logging.info("pretrained model loaded.")
     try:
         collection, metadata = get_repo(repo_name, blacklist)
-        logging.info("Respository {repo_name} cloned succesfully. ")
-        return RAG.index(
-            collection=collection,
-            index_name=index_name,
-            max_document_length=max_document_length,
-            split_documents=split_documents,
-            document_metadatas=metadata,
-        )
     except RepoCloneError as e:
         logging.error(f"Repository cloning failed: {e}")
     except FileProcessingError as e:
         logging.error(f"File processing failed: {e}")
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
+        logging.info("Respository {repo_name} cloned succesfully. ")
 
-# def update_index():
-#     try:
-#         collection, metadata = get_repo("pvlib/pvlib-python", blacklist)
-#     except RepoCloneError as e:
-#         print(f"Repository cloning failed: {e}")
-#     except FileProcessingError as e:
-#         print(f"File processing failed: {e}")
-#     except Exception as e:
-#         print(f"An unexpected error occurred: {e}")
-
-#     RAG = RAGPretrainedModel.from_index()
-#     RAG.index(
-#         collection=collection,
-#         index_name=name,
-#         max_document_length=max_document_length,
-#         split_documents=split_documents,
-#         document_metadatas=metadata,
-#     )
+    return RAG.index(
+            collection=collection,
+            index_name=index_name,
+            max_document_length=max_document_length,
+            split_documents=split_documents,
+            document_metadatas=metadata,
+        )
 
 
 if __name__ == '__main__':
     args = parse_arguments()
     blacklist = {'.exe', '.dll', '.so', '.dylib', '.png', '.jpg', '.jpeg', '.gif', '.rst', '.txt'}
     if args.action == 'create':
-        path = make_index(args.name, args.repo_name, blacklist, 256)
+        path = make_index(
+            index_name=args.name,
+            repo_name=args.repo_name,
+            blacklist=blacklist
+        )
         logging.info(f"created index in {path}")   
     elif args.action == 'update':
         print("Not implemented")

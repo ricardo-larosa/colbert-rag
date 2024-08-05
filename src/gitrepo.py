@@ -1,9 +1,7 @@
 import os
 import tempfile
 from typing import List, Tuple, Dict, Set
-from git import Repo
-import git
-import stat
+from git import Repo, exc
 import time
 import hashlib
 import mimetypes
@@ -32,7 +30,7 @@ def get_repo(repo_name: str, blacklist: Set[str] = set(), repo_metadata=False) -
         repo_url = f"https://github.com/{repo_name}.git"
         try:
             repo = Repo.clone_from(repo_url, temp_dir, depth=1, single_branch=True)
-        except git.exc.GitCommandError as e:
+        except exc.GitCommandError as e:
             raise RepoCloneError(f"Failed to clone repository {repo_name}: {str(e)}")
 
         file_contents = []
