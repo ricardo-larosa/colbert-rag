@@ -1,4 +1,8 @@
 import requests
+import ragatouille
+
+# Wikipedia API endpoint
+URL = "https://en.wikipedia.org/w/api.php"
 
 def get_wikipedia_page(title: str):
     """
@@ -7,9 +11,6 @@ def get_wikipedia_page(title: str):
     :param title: str - Title of the Wikipedia page.
     :return: str - Full text content of the page as raw string.
     """
-    # Wikipedia API endpoint
-    URL = "https://en.wikipedia.org/w/api.php"
-
     # Parameters for the API request
     params = {
         "action": "query",
@@ -29,3 +30,12 @@ def get_wikipedia_page(title: str):
     page = next(iter(data["query"]["pages"].values()))
     
     return page["extract"] if "extract" in page else None
+
+def make_index(model, name, pages, max_document_length=180, split_documents=True):
+    collection = [get_wikipedia_page(page) for page in pages]
+    model.index(
+        collection=collection,
+        index_name=name,
+        max_document_length=max_document_length,
+        split_documents=split_documents,
+    )
