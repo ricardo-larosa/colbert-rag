@@ -1,10 +1,11 @@
 import os
 import tempfile
-from typing import List, Tuple, Dict, Set
+from typing import Any,List, Tuple, Dict, Set
 from git import Repo, exc
 import time
 import hashlib
 import mimetypes
+from collections import defaultdict
 
 class RepoCloneError(Exception):
     """Exception raised for errors in the repository cloning process."""
@@ -14,7 +15,10 @@ class FileProcessingError(Exception):
     """Exception raised for errors in processing individual files."""
     pass
 
-def get_repo(repo_name: str, ext_blacklist: Set[str] = set(), dir_blacklist: Set[str] = set(), repo_metadata=False) -> Tuple[List[Tuple[str, str]], List, List[Dict[str, any]]]:
+def get_repo(
+        repo_name: str, 
+        ext_blacklist: Set[str] = set(), 
+        dir_blacklist: Set[str] = set()) -> Dict[str, Tuple[List[str], List[Dict[str, Any]], List[str]]]:
     """
     Clone a GitHub repository and read its contents, excluding files with blacklisted extensions.
 
@@ -24,7 +28,7 @@ def get_repo(repo_name: str, ext_blacklist: Set[str] = set(), dir_blacklist: Set
     dir_blacklist (Set[str]): A set of directory names to exclude (e.g., {'node_modules', 'build'}).
 
     Returns:
-    Tuple[List[Tuple[str, str]], List, List[Dict[str, any]]]: A tuple containing file_contents, document_ids and metadata.
+    Dict[str, Tuple[List[str], List[Dict[str, Any]], List[str]]]: A dictionary where each key is the filetype and the value is a tuple of (file_contents, metadata, ids).
     """
     with tempfile.TemporaryDirectory() as temp_dir:
         # Clone the repository, fetching only the default branch
@@ -34,9 +38,8 @@ def get_repo(repo_name: str, ext_blacklist: Set[str] = set(), dir_blacklist: Set
         except exc.GitCommandError as e:
             raise RepoCloneError(f"Failed to clone repository {repo_name}: {str(e)}")
 
-        file_contents = []
-        metadata = []
-        ids = []
+        collections = defaultdict(lambda: ([], [], []))
+
         for root, dirs, files in os.walk(temp_dir, topdown=True):
             # Exclude blacklisted directories only at the root level
             if root == temp_dir:
@@ -54,9 +57,7 @@ def get_repo(repo_name: str, ext_blacklist: Set[str] = set(), dir_blacklist: Set
                 try:
                     with open(file_path, 'rb') as f:
                         content = f.read()
-                    
-                    file_contents.append(content.decode('utf-8', errors='replace'))
-                    ids.append(file_path)
+
                     file_stat = os.stat(file_path)
                     file_meta = {
                         "filename": file,
@@ -67,29 +68,24 @@ def get_repo(repo_name: str, ext_blacklist: Set[str] = set(), dir_blacklist: Set
                         # "file_mode": stat.filemode(file_stat.st_mode),
                         # "is_symlink": os.path.islink(file_path),
                         # "mime_type": get_mime_type(file_path),
+                        # determine what programming language the file is written in, based on mime type
+                        "type": get_mime_type(file_path).split('/')[1] if get_mime_type(file_path).startswith("text/") else "unknown",
                         "md5_hash": hashlib.md5(content).hexdigest(),
-                        # "extension": file_extension,
+                        "extension": file_extension,
                         # "is_executable": bool(file_stat.st_mode & stat.S_IXUSR),
                     }
-                    metadata.append(file_meta)
+
+                    filetype = file_meta["type"]
+                    # Append data to the corresponding lists in collections
+                    collections[filetype][0].append(content.decode('utf-8', errors='replace'))
+                    collections[filetype][1].append(relative_path)
+                    collections[filetype][2].append(file_meta)
+
                 except Exception as e:
                     raise FileProcessingError(f"Error processing file {file_path}: {str(e)}")
 
-        # Add repository-level metadata
-        if repo_metadata:
-            repo_meta = {
-                "default_branch": repo.active_branch.name,
-                "commit_hash": repo.head.commit.hexsha,
-                "commit_author": f"{repo.head.commit.author.name} <{repo.head.commit.author.email}>",
-                "commit_message": repo.head.commit.message.strip(),
-                "commit_date": time.ctime(repo.head.commit.committed_date),
-            }
-            metadata.append(repo_meta)
-
-        return file_contents, ids, metadata
+        return dict(collections) 
 
 def get_mime_type(file_path: str) -> str:
     mime_type, _ = mimetypes.guess_type(file_path)
     return mime_type or "application/octet-stream"
-
-
