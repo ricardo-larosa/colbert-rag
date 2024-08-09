@@ -14,6 +14,7 @@ def parse_arguments():
     parser.add_argument("--repo_name", type=str, help="The name of the GitHub repository in the format username/repo-name")
     parser.add_argument("--chunk_size", type=int, default=256, help="Port to run the server on (default: 256)")
     parser.add_argument("--log_level", type=str, default="INFO", help="Log level (default: INFO)")
+    parser.add_argument("--use_faiss", type=bool, default=False, help="Use Faiss for indexing (default: True)")
 
     return parser.parse_args()
 
@@ -126,7 +127,7 @@ if __name__ == '__main__':
             ext_blacklist=ext_blacklist,
             dir_blacklist=dir_blacklist,
             max_document_length=args.chunk_size,
-            use_faiss=False)
+            use_faiss=args.use_faiss)
         logging.info(f"created index in {path}")   
     elif args.action == 'update':
         print("Not implemented")
