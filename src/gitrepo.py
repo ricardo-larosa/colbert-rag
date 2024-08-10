@@ -70,10 +70,10 @@ def get_repo(
                     sample_size = max(min(int(len(document) * sample_percentage / 100), max_chars), min_chars)
                     sample = document[:sample_size]
                     lexer = guess_lexer_for_filename(file_path, sample)
-                    language = lexer.name
+                    language = lexer.name.lower()
 
                 except ClassNotFound:
-                    language = "Unknown"
+                    language = "unknown"
 
                 except Exception as e:
                     raise FileProcessingError(f"Error processing file {file_path}: {str(e)}")
