@@ -69,6 +69,40 @@ def make_git_index(
         max_document_length: int = 256, 
         split_documents: bool = True,
         use_faiss: bool = False) -> str:
+
+    path = index_git_code(
+        model_name=model_name,
+        index_name=index_name,
+        repo_name=repo_name,
+        ext_blacklist=ext_blacklist,
+        dir_blacklist=dir_blacklist,
+        max_document_length=max_document_length,
+        use_faiss=use_faiss)
+    
+    logging.info(f"indexing other files...")
+
+    for filetype, (contents, ids, metadata) in collections.items():
+        if filetype == "x-python" or filetype =="unknown":
+            continue
+        logging.info(f"indexing {filetype} files...")
+        update_index(
+            model_path=path,
+            index_name=index_name,
+            new_collection=contents,
+            new_document_ids=ids,
+            new_document_metadatas=metadata,
+            split_documents=split_documents,
+            use_faiss=use_faiss)
+
+    return path
+
+def index_git_code(
+        model_name:str, index_name:str, repo_name:str,
+        ext_blacklist = {}, 
+        dir_blacklist = {}, 
+        max_document_length: int = 256, 
+        split_documents: bool = True,
+        use_faiss: bool = False) -> str:
     try:
         collections = get_repo(repo_name, ext_blacklist, dir_blacklist)
         logging.info(f"git repo {repo_name} cloned.")
@@ -94,21 +128,6 @@ def make_git_index(
         max_document_length=max_document_length,
         split_documents=split_documents,
         use_faiss=use_faiss)
-    
-    logging.info(f"indexing other files...")
-
-    for filetype, (contents, ids, metadata) in collections.items():
-        if filetype == "x-python" or filetype =="unknown":
-            continue
-        logging.info(f"indexing {filetype} files...")
-        update_index(
-            model_path=path,
-            index_name=index_name,
-            new_collection=contents,
-            new_document_ids=ids,
-            new_document_metadatas=metadata,
-            split_documents=split_documents,
-            use_faiss=use_faiss)
 
     return path
 
