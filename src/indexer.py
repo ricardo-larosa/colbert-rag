@@ -1,11 +1,15 @@
 import argparse
 from typing import Any, Callable, Optional, Union, List
 from ragatouille import RAGPretrainedModel
-from gitrepo import get_repo, RepoCloneError, FileProcessingError
-from preprocessors import langchain_code_splitter
+from gitrepo import get_collections, RepoCloneError, FileProcessingError
+from langchain_text_splitters import Language, RecursiveCharacterTextSplitter
 import logging
 
 # RAGATOUILLE_PATH = "../.ragatouille/colbert/indexes"
+def parse_list(s):
+    if s:
+        return s.split(',')
+    return []
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="ColbertRAG indexer")
@@ -15,6 +19,8 @@ def parse_arguments():
     parser.add_argument("--chunk_size", type=int, default=256, help="Port to run the server on (default: 256)")
     parser.add_argument("--log_level", type=str, default="INFO", help="Log level (default: INFO)")
     parser.add_argument("--use_faiss", type=bool, default=False, help="Use Faiss for indexing (default: True)")
+    parser.add_argument("--ext_blacklist", type=parse_list, default=".gitignore", help="Blacklisted file extensions (default: .gitignore)")
+    parser.add_argument("--dir_blacklist", type=parse_list, default=".git,.github", help="Blacklisted directories (default: .git, .github)")
 
     return parser.parse_args()
 
@@ -62,41 +68,7 @@ def update_index(
         split_documents=split_documents,
         use_faiss=use_faiss)
 
-def make_git_index(
-        model_name:str, index_name:str, repo_name:str,
-        ext_blacklist = {}, 
-        dir_blacklist = {}, 
-        max_document_length: int = 256, 
-        split_documents: bool = True,
-        use_faiss: bool = False) -> str:
-
-    path = index_git_code(
-        model_name=model_name,
-        index_name=index_name,
-        repo_name=repo_name,
-        ext_blacklist=ext_blacklist,
-        dir_blacklist=dir_blacklist,
-        max_document_length=max_document_length,
-        use_faiss=use_faiss)
-    
-    logging.info(f"indexing other files...")
-
-    for filetype, (contents, ids, metadata) in collections.items():
-        if filetype == "x-python" or filetype =="unknown":
-            continue
-        logging.info(f"indexing {filetype} files...")
-        update_index(
-            model_path=path,
-            index_name=index_name,
-            new_collection=contents,
-            new_document_ids=ids,
-            new_document_metadatas=metadata,
-            split_documents=split_documents,
-            use_faiss=use_faiss)
-
-    return path
-
-def index_git_code(
+def index_git_repo(
         model_name:str, index_name:str, repo_name:str,
         ext_blacklist = {}, 
         dir_blacklist = {}, 
@@ -104,7 +76,7 @@ def index_git_code(
         split_documents: bool = True,
         use_faiss: bool = False) -> str:
     try:
-        collections = get_repo(repo_name, ext_blacklist, dir_blacklist)
+        collections = get_collections(repo_name, ext_blacklist, dir_blacklist)
         logging.info(f"git repo {repo_name} cloned.")
     except RepoCloneError as e:
         logging.error(f"Repository cloning failed: {e}")
@@ -114,20 +86,50 @@ def index_git_code(
         logging.error(f"An unexpected error occurred: {e}")
         logging.info("Respository {repo_name} cloned succesfully. ")
 
-    logging.info(f"indexing code ...")
+    # Determine the main language, collection with the most documents
+    main_lang = max(collections, key=lambda x: len(collections[x][0]))
+    collection, document_ids, document_metadatas = collections.get(main_lang, ([], [], []))
 
-    python_files = collections.get("x-python", ([], [], []))
-    python_contents, python_ids, python_metadata = python_files
+    logging.info(f"indexing {len(collection)} {main_lang} files ...")
     path = make_index(
         model_name=model_name,
         index_name=index_name,
-        collection=python_contents,
-        document_ids=python_ids,
-        document_metadatas=python_metadata,
-        document_splitter_fn=langchain_code_splitter,
+        collection=collection,
+        document_ids=document_ids,
+        document_metadatas=document_metadatas,
+        document_splitter_fn=lambda documents, document_ids, chunk_size=max_document_length: [{"document_id": doc_id, "content": chunk}
+            for doc_id, text in zip(document_ids, documents)
+            for chunk in RecursiveCharacterTextSplitter.from_language(
+                language=Language[main_lang],
+                chunk_size=chunk_size, 
+                chunk_overlap=0
+            ).split_text(text)
+        ],
         max_document_length=max_document_length,
         split_documents=split_documents,
-        use_faiss=use_faiss)
+        use_faiss=use_faiss
+    )
+
+    for lang, (new_collection, new_document_ids, new_document_metadatas) in collections.items():
+        if lang in [main_lang,'UNSUPPORTED','UNKNOWN']:
+            continue
+        logging.info(f"adding {len(new_collection)} {lang} files ...")
+        update_index(
+            model_path=path,
+            index_name=index_name,
+            new_collection=new_collection,
+            new_document_ids=new_document_ids,
+            new_document_metadatas=new_document_metadatas,
+            document_splitter_fn=lambda documents, document_ids, chunk_size=max_document_length: [{"document_id": doc_id, "content": chunk}
+                for doc_id, text in zip(document_ids, documents)
+                for chunk in RecursiveCharacterTextSplitter.from_language(
+                    language=Language[lang],
+                    chunk_size=chunk_size, 
+                    chunk_overlap=0
+                ).split_text(text)
+            ],
+            split_documents=split_documents,
+            use_faiss=use_faiss)
 
     return path
 
@@ -135,18 +137,17 @@ if __name__ == '__main__':
     args = parse_arguments()
     if args.log_level is not None:
         logging.basicConfig(level=args.log_level)
-    ext_blacklist = {'.exe', '.dll', '.so', '.dylib', '.png', '.jpg', '.jpeg', '.gif', '.rst', '.txt', '.yaml','.gitignore'}
-    dir_blacklist = {'ext','tests', 'docs', '.git', '.github'}
-    # dir_blacklist = {'script','tests', 'doc', '.git', '.github'}
+    # ext_blacklist = {'.exe', '.dll', '.so', '.dylib', '.png', '.jpg', '.jpeg', '.gif', '.rst', '.txt', '.yaml','.gitignore'}
+    # dir_blacklist = {'ext','tests', 'docs', '.git', '.github'}
+
     if args.action == 'create':
-        path = make_git_index(
+        print(args.ext_blacklist)
+        path = index_git_repo(
             model_name="colbert-ir/colbertv2.0",
             index_name=args.name,
             repo_name=args.repo_name,
-            ext_blacklist=ext_blacklist,
-            dir_blacklist=dir_blacklist,
+            ext_blacklist=args.ext_blacklist,
+            dir_blacklist=args.dir_blacklist,
             max_document_length=args.chunk_size,
             use_faiss=args.use_faiss)
         logging.info(f"created index in {path}")   
-    elif args.action == 'update':
-        print("Not implemented")
