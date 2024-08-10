@@ -13,6 +13,7 @@ python-dotenv = "^1.0.1"
 grpcio-tools = "^1.65.1"
 gitpython = "^3.1.43"
 faiss-gpu = "^1.7.2"
+pygments = "^2.18.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
