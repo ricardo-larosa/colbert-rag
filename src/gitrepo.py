@@ -2,11 +2,11 @@ import os
 import tempfile
 from typing import Any,List, Tuple, Dict, Set
 from git import Repo, exc
-import time
 import hashlib
 from collections import defaultdict
 from pygments.lexers import guess_lexer_for_filename
 from pygments.util import ClassNotFound
+from langchain_text_splitters import Language
 
 class RepoCloneError(Exception):
     """Exception raised for errors in the repository cloning process."""
@@ -16,7 +16,7 @@ class FileProcessingError(Exception):
     """Exception raised for errors in processing individual files."""
     pass
 
-def get_repo(
+def get_collections(
         repo_name: str, 
         ext_blacklist: Set[str] = set(), 
         dir_blacklist: Set[str] = set(),
@@ -24,21 +24,20 @@ def get_repo(
         sample_min: int = 512,
         sample_max: int = 2048) -> Dict[str, Tuple[List[str], List[Dict[str, Any]], List[str]]]:
     """
-    Clone a GitHub repository and read its contents, excluding files with blacklisted extensions.
+    Prepare collections of documents, document IDs, and document metadata from a GitHub repository.
 
     Args:
     repo_name (str): The name of the GitHub repository in the format "username/repo-name".
-    ext_blacklist (Set[str]): A set of file extensions to exclude (e.g., {'.exe', '.dll'}).
-    dir_blacklist (Set[str]): A set of directory names to exclude (e.g., {'node_modules', 'build'}).
+    ext_blacklist (Set[str]): A set of file extensions to exclude (e.g., {'.gitignore', '.dll'}).
+    dir_blacklist (Set[str]): A set of directory names to exclude (e.g., {'node_modules', '.git'}).
     sample_ratio (float): Percentage of each file to read for language detection (default 10%).
-    sample_min (int): Minimum number of bytes to read from each file (default 100).
-    sample_min (int): Maximum number of bytes to read from each file (default 1000).
+    sample_min (int): Minimum number of bytes to read from each file (default 512).
+    sample_min (int): Maximum number of bytes to read from each file (default 2048).
 
     Returns:
-    Dict[str, Tuple[List[str], List[Dict[str, Any]], List[str]]]: A dictionary where each key is the filetype and the value is a tuple of (file_contents, metadata, ids).
+    Dict[str, Tuple[List[str], List[Dict[str, Any]], List[str]]]: A dictionary where each key is the filetype and the value is a tuple of (document, document_id, document_metadata).
     """
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Clone the repository, fetching only the default branch
         repo_url = f"https://github.com/{repo_name}.git"
         try:
             repo = Repo.clone_from(repo_url, temp_dir, depth=1, single_branch=True)
@@ -54,7 +53,7 @@ def get_repo(
                 
             for file in files:
                 file_path = os.path.join(root, file)
-                relative_path = os.path.relpath(file_path, temp_dir)
+                document_id = os.path.relpath(file_path, temp_dir) # Relative path from the temp directory
                 _, file_extension = os.path.splitext(file)
                 # Skip files with blacklisted extensions
                 if file_extension.lower() in ext_blacklist:
@@ -67,28 +66,28 @@ def get_repo(
 
                     file_stat = os.stat(file_path)
                     # Calculate how many characters to use for language detection
-                    sample_size = max(min(int(len(document) * sample_percentage / 100), max_chars), min_chars)
+                    sample_size = max(min(int(len(document) * sample_ratio / 100), sample_max), sample_min)
                     sample = document[:sample_size]
                     lexer = guess_lexer_for_filename(file_path, sample)
-                    language = lexer.name.lower()
+                    language = next((lang.name for lang in Language if lang.value in lexer.aliases), 'UNSUPPORTED')
 
                 except ClassNotFound:
-                    language = "unknown"
+                    language = "UNKNOWN"
 
                 except Exception as e:
                     raise FileProcessingError(f"Error processing file {file_path}: {str(e)}")
                 
-                file_meta = {
+                document_metadata = {
                     "filename": file,
-                    "path": relative_path,
+                    "path": document_id,
                     "size_bytes": file_stat.st_size,
                     "language": language,
                     "md5_hash": hashlib.md5(content).hexdigest(),
                     "extension": file_extension,
                 }
 
-                collections[language][0].append(document) # collection
-                collections[language][1].append(relative_path) # document_id
-                collections[language][2].append(file_meta) # document _metadata
+                data = (document, document_id, document_metadata)
+                for i, item in enumerate(data):
+                    collections[language][i].append(item)
 
         return dict(collections) 
