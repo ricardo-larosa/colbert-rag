@@ -5,7 +5,6 @@ from gitrepo import get_collections, RepoCloneError, FileProcessingError
 from langchain_text_splitters import Language, RecursiveCharacterTextSplitter
 import logging
 
-# RAGATOUILLE_PATH = "../.ragatouille/colbert/indexes"
 def parse_list(s):
     if s:
         return s.split(',')
