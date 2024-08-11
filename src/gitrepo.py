@@ -22,7 +22,7 @@ def get_collections(
         dir_blacklist: Set[str] = set(),
         sample_ratio: float = 10,
         sample_min: int = 512,
-        sample_max: int = 2048) -> Dict[str, Tuple[List[str], List[Dict[str, Any]], List[str]]]:
+        sample_max: int = 2048) -> Dict[str, Tuple[List[str], List[Dict[str, str]], List[str]]]:
     """
     Prepare collections of documents, document IDs, and document metadata from a GitHub repository.
 
@@ -35,7 +35,7 @@ def get_collections(
     sample_min (int): Maximum number of bytes to read from each file (default 2048).
 
     Returns:
-    Dict[str, Tuple[List[str], List[Dict[str, Any]], List[str]]]: A dictionary where each key is the filetype and the value is a tuple of (document, document_id, document_metadata).
+    Dict[str, Tuple[List[str], List[Dict[str, str]], List[str]]]: A dictionary where each key is the filetype and the value is a tuple of (document, document_id, document_metadata).
     """
     with tempfile.TemporaryDirectory() as temp_dir:
         repo_url = f"https://github.com/{repo_name}.git"
@@ -80,7 +80,6 @@ def get_collections(
                 document_metadata = {
                     "filename": file,
                     "path": document_id,
-                    "size_bytes": file_stat.st_size,
                     "language": language,
                     "md5_hash": hashlib.md5(content).hexdigest(),
                     "extension": file_extension,
