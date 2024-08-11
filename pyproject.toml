@@ -1,8 +1,9 @@
 [tool.poetry]
-name = "colbert-rag"
+name = "colbert_rag"
 version = "0.1.0"
 description = "RAG using Langchain and RAGatouille"
 authors = ["ricardo-larosa <ricardo@larosa.dev>"]
+packages = [{ include = "colbert_rag" }]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -12,13 +13,24 @@ langchain-openai = "0.1.7"
 python-dotenv = "^1.0.1"
 grpcio-tools = "^1.65.1"
 gitpython = "^3.1.43"
-faiss-gpu = "^1.7.2"
 pygments = "^2.18.0"
+faiss-cpu = { version = "^1.7.2", platform = "darwin" } # faiss-gpu not supported for macos
+faiss-gpu = { version = "^1.7.2", platform = "linux" }
+fastapi = "^0.112.0"
+uvicorn = "^0.30.6"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
 ipykernel = "^6.29.5"
+mypy-protobuf = "^3.6.0"
 
+mypy = "^1.11.1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+server = "scripts.server:run"
+create-index = "scripts.index:create"
+generate-protos = "scripts.generate:protos"
+type-check = "scripts.type_check:run_mypy"
