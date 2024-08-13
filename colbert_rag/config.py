@@ -1,6 +1,6 @@
 import os
 
-RAGATOUILLE_PATH = os.environ.get('RAGATOUILLE_PATH', '../.ragatouille/colbert/indexes')
+RAGATOUILLE_PATH = os.environ.get('RAGATOUILLE_PATH', '.ragatouille/colbert/indexes')
 COLBERTRAG_CHUNK_SIZE = 256
 COLBERTRAG_MAX_WORKERS = 10
 COLBERTRAG_GRPC_PORT = 50051
