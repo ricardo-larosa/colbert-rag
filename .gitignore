@@ -156,3 +156,8 @@ cython_debug/
 
 # RAGatouille Files
 .ragatouille
+
+# Generated proto files
+# colbert_rag/proto/*_pb2.py
+# colbert_rag/proto/*_pb2_grpc.py
+# colbert_rag/proto/*_pb2.pyi
