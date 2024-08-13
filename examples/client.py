@@ -1,6 +1,5 @@
 import grpc
-import colbertrag_pb2
-import colbertrag_pb2_grpc
+from colbert_rag.proto import colbertrag_pb2, colbertrag_pb2_grpc
 
 def run():
     with grpc.insecure_channel('localhost:50051') as channel:
