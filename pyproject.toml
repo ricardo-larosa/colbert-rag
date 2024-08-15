@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "colbert-rag"
-version = "0.1.1"
+version = "0.1.2"
 description = "RAG using Langchain and RAGatouille"
 authors = ["ricardo-larosa <ricardo@larosa.dev>"]
 packages = [{ include = "colbert_rag" }]
