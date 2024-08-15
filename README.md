@@ -8,6 +8,17 @@ Index GitHub repositories to ColBERT models and serve them with GRPC or FastAPI.
 - GRPC and FastAPI server implementations
 - Flexible document processing and indexing
 
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+The Apache License 2.0 is a permissive license that also provides an express grant of patent rights from contributors to users. Key points:
+
+- It allows you to freely use, modify, distribute, and sell your software.
+- If you modify the code, you may distribute your modified version, but you must include a notice stating that you changed the files.
+- Any modifications or larger works may be distributed under different terms and without source code, but they must include a copy of the Apache 2.0 license.
+- You must retain all copyright, patent, trademark, and attribution notices from the original code.
+
 ## Setup
 
 1. Install dependencies using Poetry:
