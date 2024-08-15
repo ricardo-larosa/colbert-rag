@@ -65,3 +65,4 @@ def get_collections(
                     collections[language][i].append(item)
 
         return dict(collections)
+
