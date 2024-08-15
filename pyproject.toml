@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "colbert_rag"
+name = "colbert-rag"
 version = "0.1.1"
 description = "RAG using Langchain and RAGatouille"
 authors = ["ricardo-larosa <ricardo@larosa.dev>"]
