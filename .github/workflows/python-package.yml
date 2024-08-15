@@ -24,7 +24,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install poetry
-        poetry install
+        poetry install --with cpu
     - name: Run tests
       run: poetry run pytest
 
