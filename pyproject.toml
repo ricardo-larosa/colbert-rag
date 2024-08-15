@@ -14,10 +14,20 @@ python-dotenv = "^1.0.1"
 grpcio-tools = "^1.65.1"
 gitpython = "^3.1.43"
 pygments = "^2.18.0"
-faiss-cpu = { version = "^1.7.2", platform = "darwin" } # faiss-gpu not supported for macos
-faiss-gpu = { version = "^1.7.2", platform = "linux" }
 fastapi = "^0.112.0"
 uvicorn = "^0.30.6"
+
+[tool.poetry.group.cpu]
+optional = true
+
+[tool.poetry.group.cpu.dependencies]
+faiss-cpu = "^1.7.2"
+
+[tool.poetry.group.gpu]
+optional = true
+
+[tool.poetry.group.gpu.dependencies]
+faiss-gpu = "^1.7.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
